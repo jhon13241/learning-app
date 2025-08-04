@@ -10,11 +10,13 @@ import {
   Easing,
   SafeAreaView,
   AppState,
-  AppStateStatus
+  AppStateStatus,
+  Dimensions
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../constants/designSystem';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Typography, Spacing, BorderRadius, Shadows, Animation } from '../../constants/designSystem';
 import { useTheme } from '../../contexts/ThemeContext';
 import * as Notifications from 'expo-notifications';
 import * as KeepAwake from 'expo-keep-awake';
@@ -23,6 +25,8 @@ import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
+import { Card } from '../../components/Card';
+import { Button } from '../../components/Button';
 
 // Timer presets in minutes
 const PRESET_MINUTES = [5, 10, 15];
@@ -30,6 +34,8 @@ const PRESET_MINUTES = [5, 10, 15];
 const MINUTES = Array.from({ length: 61 }, (_, i) => i);
 // Available seconds for custom timer
 const SECONDS = [0, 15, 30, 45];
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function TimerTab() {
   const insets = useSafeAreaInsets();
@@ -586,137 +592,155 @@ export default function TimerTab() {
     ]}>
       <StatusBar style={isDark ? "light" : "dark"} />
       {timerActive ? (
-        // ACTIVE TIMER VIEW
+        // ACTIVE TIMER VIEW - MODERNIZED
         <View style={styles.activeTimerContainer}>
-          {/* Timer Circle */}
-          <View style={[
-            styles.timerCard,
-            { 
-              backgroundColor: isDark ? colors.secondarySystemBackground : colors.white,
-              borderColor: isDark ? 'transparent' : colors.separator,
-              borderWidth: isDark ? 0 : 1,
-            }
-          ]}>
-            <AnimatedCircularProgress
-              size={280} 
-              width={8} // Thinner line for more iOS-like appearance
-              backgroundWidth={4} // Even thinner background for contrast
-              fill={getProgressPercentage()}
-              tintColor={colors.primary}
-              backgroundColor={isDark ? colors.systemFill : colors.primaryExtraLight}
-              rotation={0}
-              lineCap="round"
-              duration={500}
-            >
-              {() => (
-                <View style={styles.timerDigitsContainer}>
-                  <Animated.Text
-                    style={[
-                      styles.timerDisplay,
-                      { color: colors.label, transform: [{ scale: timerAnim }] }
-                    ]}
-                    accessibilityRole="timer"
-                  >
-                    {formatTime(remaining)}
-                  </Animated.Text>
-                  
-                  <Text style={[styles.timerStatus, { color: colors.secondaryLabel }]}>
-                    {paused ? 'Paused' : 'Active'}
-                  </Text>
-                </View>
-              )}
-            </AnimatedCircularProgress>
-          </View>
+          {/* Gradient Background */}
+          <LinearGradient
+            colors={isDark ? colors.gradients.dark : colors.gradients.primarySubtle}
+            style={styles.gradientBackground}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+          
+          {/* Modern Timer Card */}
+          <Card
+            variant="glass"
+            borderRadius="xxl"
+            padding="xxxl"
+            style={styles.modernTimerCard}
+            shadow="xl"
+          >
+            {/* Enhanced Circular Progress */}
+            <View style={styles.progressContainer}>
+              <AnimatedCircularProgress
+                size={screenWidth * 0.7} 
+                width={12}
+                backgroundWidth={6}
+                fill={getProgressPercentage()}
+                tintColor={colors.primary}
+                backgroundColor={isDark ? colors.gray4 + '30' : colors.primaryExtraLight}
+                rotation={-90}
+                lineCap="round"
+                duration={800}
+                style={styles.circularProgress}
+              >
+                {() => (
+                  <View style={styles.modernTimerDisplay}>
+                    <Animated.Text
+                      style={[
+                        styles.modernTimeText,
+                        { 
+                          color: colors.label, 
+                          transform: [{ scale: timerAnim }] 
+                        }
+                      ]}
+                      accessibilityRole="timer"
+                    >
+                      {formatTime(remaining)}
+                    </Animated.Text>
+                    
+                    <View style={[styles.statusBadge, { backgroundColor: paused ? colors.warning + '20' : colors.success + '20' }]}>
+                      <Feather 
+                        name={paused ? "pause" : "clock"} 
+                        size={16} 
+                        color={paused ? colors.warning : colors.success}
+                        style={styles.statusIcon}
+                      />
+                      <Text style={[
+                        styles.modernStatusText, 
+                        { color: paused ? colors.warning : colors.success }
+                      ]}>
+                        {paused ? 'Paused' : 'Active Session'}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </AnimatedCircularProgress>
+            </View>
 
-          {/* Timer Controls */}
-          <View style={styles.controlsContainer}>
-            <TouchableOpacity
-              style={[
-                styles.controlButton,
-                { 
-                  backgroundColor: paused ? colors.primary : isDark ? colors.secondarySystemBackground : colors.white,
-                  borderColor: isDark ? 'transparent' : colors.separator,
-                  borderWidth: isDark ? 0 : 1,
-                }
-              ]}
+            {/* Session Info */}
+            <View style={styles.sessionInfo}>
+              <Text style={[styles.sessionTitle, { color: colors.label }]}>
+                Hitbodedut Session
+              </Text>
+              <Text style={[styles.sessionDuration, { color: colors.secondaryLabel }]}>
+                {Math.floor((timerDuration || 0) / 60)} minutes total
+              </Text>
+            </View>
+          </Card>
+
+          {/* Modern Controls */}
+          <View style={styles.modernControlsContainer}>
+            <Button
+              title={paused ? 'Resume' : 'Pause'}
+              icon={paused ? "play" : "pause"}
+              variant={paused ? "gradient" : "glass"}
+              size="large"
               onPress={handlePauseResume}
-              activeOpacity={0.7}
-            >
-              <Feather 
-                name={paused ? "play" : "pause"} 
-                size={20} 
-                color={paused ? colors.white : colors.label} 
-              />
-              <Text style={[
-                styles.controlButtonText,
-                { color: paused ? colors.white : colors.label }
-              ]}>
-                {paused ? 'Resume' : 'Pause'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.controlButton, 
-                { backgroundColor: colors.error }
-              ]}
+              style={styles.controlButton}
+            />
+            
+            <Button
+              title="End Session"
+              icon="square"
+              variant="outline"
+              size="large"
               onPress={handleStop}
-              activeOpacity={0.7}
-            >
-              <Feather name="x" size={20} color={colors.white} />
-              <Text style={[styles.controlButtonText, { color: colors.white }]}>
-                End
-              </Text>
-            </TouchableOpacity>
+              style={[styles.controlButton, { borderColor: colors.error, color: colors.error }]}
+              textStyle={{ color: colors.error }}
+            />
           </View>
         </View>
       ) : (
-        // SETUP VIEW
-        <View style={styles.setupContainer}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: colors.label }]}>
+        // SETUP VIEW - MODERNIZED
+        <View style={styles.modernSetupContainer}>
+          {/* Gradient Background */}
+          <LinearGradient
+            colors={isDark ? colors.gradients.dark : colors.gradients.neutral}
+            style={styles.setupGradientBackground}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+          
+          {/* Modern Header */}
+          <View style={styles.modernHeader}>
+            <Text style={[styles.modernHeaderTitle, { color: colors.label }]}>
               Hitbodedut Timer
             </Text>
-            <Text style={[styles.headerSubtitle, { color: colors.secondaryLabel }]}>
-              Set a timer for your meditation session
+            <Text style={[styles.modernHeaderSubtitle, { color: colors.secondaryLabel }]}>
+              Find peace through guided meditation sessions
             </Text>
           </View>
 
           {/* Quick Start Section */}
-          <View style={[
-            styles.setupCard, 
-            { 
-              backgroundColor: isDark ? colors.secondarySystemBackground : colors.white,
-              borderColor: isDark ? 'transparent' : colors.separator,
-              borderWidth: isDark ? 0 : 1,
-            }
-          ]}>
-            <Text style={[styles.sectionTitle, { color: colors.label }]}>
-              Quick Start
-            </Text>
+          <Card
+            variant="glass"
+            borderRadius="xl"
+            padding="cardPadding"
+            style={styles.modernSetupCard}
+            shadow="medium"
+          >
+            <View style={styles.sectionHeader}>
+              <Feather name="zap" size={24} color={colors.primary} />
+              <Text style={[styles.modernSectionTitle, { color: colors.label }]}>
+                Quick Start
+              </Text>
+            </View>
             
-            <View style={styles.presetButtonsContainer}>
-              {PRESET_MINUTES.map((min) => (
-                <TouchableOpacity
+            <View style={styles.modernPresetContainer}>
+              {PRESET_MINUTES.map((min, index) => (
+                <Button
                   key={min}
-                  style={[
-                    styles.presetButton, 
-                    { 
-                      backgroundColor: colors.primary,
-                      shadowColor: colors.primary
-                    }
-                  ]}
+                  title={`${min} min`}
+                  variant={index === 1 ? "gradient" : "glass"}
+                  size="large"
                   onPress={() => handlePreset(min)}
-                  activeOpacity={0.6}
-                >
-                  <Text style={[styles.presetButtonText, { color: colors.white }]}>
-                    {min} min
-                  </Text>
-                </TouchableOpacity>
+                  style={styles.presetButton}
+                  icon="clock"
+                />
               ))}
             </View>
-          </View>
+          </Card>
 
           {/* Custom Timer Section */}
           <View style={[
@@ -1154,5 +1178,142 @@ const styles = StyleSheet.create({
     ...Typography.callout,
     fontWeight: '600', // Semibold weight for iOS feel
     letterSpacing: -0.2, // Slight negative tracking for iOS feel
+  },
+
+  // Modern Timer Styles
+  gradientBackground: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.3,
+  },
+  
+  modernTimerCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: screenWidth * 0.85,
+    maxWidth: 400,
+    marginVertical: Spacing.xl,
+  },
+  
+  progressContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.xl,
+  },
+  
+  circularProgress: {
+    transform: [{ rotate: '180deg' }],
+  },
+  
+  modernTimerDisplay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  
+  modernTimeText: {
+    ...Typography.display,
+    fontSize: screenWidth * 0.12,
+    fontWeight: '300',
+    letterSpacing: -2,
+    marginBottom: Spacing.md,
+  },
+  
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.pill,
+    gap: Spacing.xs,
+  },
+  
+  statusIcon: {
+    // Icon styling handled by parent
+  },
+  
+  modernStatusText: {
+    ...Typography.caption1Medium,
+    fontSize: 12,
+  },
+  
+  sessionInfo: {
+    alignItems: 'center',
+    paddingTop: Spacing.lg,
+  },
+  
+  sessionTitle: {
+    ...Typography.title2,
+    fontWeight: '600',
+    marginBottom: Spacing.xs,
+  },
+  
+  sessionDuration: {
+    ...Typography.subheadline,
+    fontWeight: '400',
+  },
+  
+  modernControlsContainer: {
+    flexDirection: 'row',
+    gap: Spacing.lg,
+    paddingHorizontal: Spacing.screenPadding,
+    width: '100%',
+  },
+  
+  // Modern Setup Styles
+  modernSetupContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  
+  setupGradientBackground: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  
+  modernHeader: {
+    paddingHorizontal: Spacing.screenPadding,
+    paddingVertical: Spacing.xxl,
+    alignItems: 'center',
+  },
+  
+  modernHeaderTitle: {
+    ...Typography.largeTitle,
+    fontWeight: '800',
+    marginBottom: Spacing.sm,
+    letterSpacing: -0.5,
+    textAlign: 'center',
+  },
+  
+  modernHeaderSubtitle: {
+    ...Typography.body,
+    textAlign: 'center',
+    lineHeight: 24,
+    maxWidth: 280,
+  },
+  
+  modernSetupCard: {
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: Spacing.lg,
+  },
+  
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  
+  modernSectionTitle: {
+    ...Typography.title3,
+    fontWeight: '700',
+  },
+  
+  modernPresetContainer: {
+    gap: Spacing.md,
+  },
+  
+  presetButton: {
+    width: '100%',
   },
 }); 
