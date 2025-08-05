@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet, Animated, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, Animation } from '../constants/designSystem';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -9,7 +8,7 @@ interface LoadingSpinnerProps {
   size?: 'small' | 'large';
   color?: string;
   minDuration?: number; // ms
-  variant?: 'default' | 'gradient' | 'pulse' | 'dots';
+  variant?: 'default' | 'pulse' | 'dots';
   fullScreen?: boolean;
   overlay?: boolean;
 }
@@ -23,7 +22,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   fullScreen = false,
   overlay = false,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const [visible, setVisible] = useState(true);
   const startTimeRef = useRef<number>(Date.now());
   
@@ -66,7 +65,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     return () => {
       const elapsed = Date.now() - startTimeRef.current;
       if (elapsed < minDuration) {
-        timeout = setTimeout(() => setVisible(false), minDuration - elapsed) as unknown as number;
+        timeout = window.setTimeout(() => setVisible(false), minDuration - elapsed);
       } else {
         setVisible(false);
       }
@@ -123,27 +122,6 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     const spinnerSize = size === 'large' ? 40 : 20;
 
     switch (variant) {
-      case 'gradient':
-        return (
-          <Animated.View
-            style={[
-              styles.gradientSpinner,
-              {
-                width: spinnerSize,
-                height: spinnerSize,
-                transform: [{ scale: scaleAnim }],
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={isDark ? colors.gradients.accent : colors.gradients.primary}
-              style={[styles.gradientSpinnerInner, { width: spinnerSize, height: spinnerSize }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-          </Animated.View>
-        );
-
       case 'pulse':
         return (
           <Animated.View
@@ -216,7 +194,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     >
       {overlay && <View style={styles.overlayBackground} />}
       
-      <View style={styles.content}>
+      <View style={[styles.content, { backgroundColor: colors.secondarySystemGroupedBackground }]}>
         {renderSpinner()}
         
         {message && (
@@ -277,7 +255,6 @@ const styles = StyleSheet.create({
   overlayBackground: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    backdropFilter: 'blur(2px)',
   },
   
   content: {
@@ -285,25 +262,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: Spacing.xl,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     minWidth: 120,
   },
   
   message: {
-    ...Typography.subheadlineMedium,
+    ...Typography.subheadline,
+    fontWeight: '500',
     marginTop: Spacing.md,
     textAlign: 'center',
     maxWidth: 200,
-  },
-  
-  // Gradient spinner
-  gradientSpinner: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  
-  gradientSpinnerInner: {
-    borderRadius: 20,
   },
   
   // Pulse spinner
